@@ -25,14 +25,17 @@ def read_profile_links(driver):
     while True:
         links.extend(re.findall(link_pattern, driver.page_source))
         next_button = driver.find_element_by_css_selector('a.next.ng-scope')
-        if next_button.find_element_by_xpath('..').get_attribute('class') == disabled_class:
+        if (next_button
+            .find_element_by_xpath('..')
+            .get_attribute('class') == disabled_class):
             break
         next_button.click()
 
     return links
 
 def read_player_profile(driver, player_url):
-    '''Scrapes a player's injury, transaction, and suspension history from TSN.ca
+    '''Scrapes a player's injury, transaction, and suspension history from
+    TSN.ca
 
     Args:
         driver (selenium webdriver): a valid webdriver
@@ -54,8 +57,10 @@ def read_player_profile(driver, player_url):
     # Birth Date is stored in a span with a specific class
     birth_date = soup.find('span', {'class':'value-desc ng-binding'}).text
 
-    # Date and Event are stored in two spans under 'tr' tags with specific 'ng-repeat' values
-    rows = soup.find_all('tr', {'ng-repeat':'rosterMoves in PlayerBio.RosterMoves'})
+    # Date and Event are stored in two spans under 'tr' tags with specific
+    # 'ng-repeat' values
+    rows = soup.find_all('tr',
+                         {'ng-repeat':'rosterMoves in PlayerBio.RosterMoves'})
     for row in rows:
         spans = row.find_all('span')
         update = [span.text for span in spans]
@@ -65,7 +70,8 @@ def read_player_profile(driver, player_url):
     return roster_updates
 
 def profiles_to_dfs(player_profiles):
-    '''Converts a list of player profiles into a DataFrame containing just injury data
+    '''Converts a list of player profiles into a DataFrame containing just
+    injury data
 
     Args:
         player_urls (str list): nested lists of individual player profiles
@@ -78,7 +84,9 @@ def profiles_to_dfs(player_profiles):
     columns = ['Name', 'Birth_Date', 'Injury_Date', 'Report']
     df = pd.DataFrame(list(itertools.chain(*player_profiles)), columns=columns)
     df['Birth_Date'] = pd.to_datetime(df['Birth_Date'], format='%Y/%m/%d')
-    names_df = df[['Name', 'Birth_Date']].drop_duplicates().reset_index(drop=True)
+    names_df = (df[['Name', 'Birth_Date']]
+                .drop_duplicates()
+                .reset_index(drop=True))
 
     # Isolate reports of missed regular season games only
     df['Report'] = df['Report'].str.lower()
@@ -157,6 +165,39 @@ def profiles_to_dfs(player_profiles):
     ]
     df = df[~df['Cause'].isin(non_injuries)]
     return names_df, df.reset_index(drop=True)
+
+def nst_files_to_df(prefix, old_columns, new_columns):
+    '''Loads Natural Stat Trick CSV files that have given prefix from data
+    directory and combines them into a single DataFrame
+
+    Args:
+        prefix (str): shared prefix of NST CSV files
+        old_columns (str list): list of columns to keep, as they appear in file
+        new_columns (str list): list of revised names for original columns
+
+    Returns:
+        DataFrame: combined CSV data sorted by player and season
+    '''
+    # Gets list of csv files
+    data_dir = '../data'
+    files = [os.path.join(data_dir, file) for file in os.listdir(data_dir)
+             if file.startswith(prefix)]
+
+    # Combines all files into one dataframe
+    df_list = []
+    for file in files:
+        year = int(re.sub('\D', '', file))
+        df = pd.read_csv(file)
+        df['Season'] = year
+        df_list.append(df)
+    df = pd.concat(df_list)
+    df.sort_values(by=['Player', 'Season'], inplace=True)
+
+    # Isolate relevant columns and format column names
+    df = df[old_columns]
+    df.columns = new_columns
+    df.reset_index(drop=True, inplace=True)
+    return df
 
 def var_to_pickle(var, filename):
     '''Writes the given variable to a pickle file
