@@ -4,10 +4,20 @@ import itertools
 import pickle
 import pandas as pd
 from bs4 import BeautifulSoup
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, LassoCV
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+
+# Code snippet copied from Stack Overflow to remove sklearn Convergence Warnings
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 
 
 def read_profile_links(driver):
-    '''Scrapes all player profile links from TSN.ca's main player page
+    '''
+    Scrapes all player profile links from TSN.ca's main player page
 
     Args:
         driver (selenium webdriver): a valid webdriver
@@ -34,7 +44,8 @@ def read_profile_links(driver):
     return links
 
 def read_player_profile(driver, player_url):
-    '''Scrapes a player's injury, transaction, and suspension history from
+    '''
+    Scrapes a player's injury, transaction, and suspension history from
     TSN.ca
 
     Args:
@@ -70,7 +81,8 @@ def read_player_profile(driver, player_url):
     return roster_updates
 
 def profiles_to_dfs(player_profiles):
-    '''Converts a list of player profiles into a DataFrame containing just
+    '''
+    Converts a list of player profiles into a DataFrame containing just
     injury data
 
     Args:
@@ -167,7 +179,8 @@ def profiles_to_dfs(player_profiles):
     return names_df, df.reset_index(drop=True)
 
 def nst_files_to_df(prefix, old_columns, new_columns):
-    '''Loads Natural Stat Trick CSV files that have given prefix from data
+    '''
+    Loads Natural Stat Trick CSV files that have given prefix from data
     directory and combines them into a single DataFrame
 
     Args:
@@ -200,7 +213,8 @@ def nst_files_to_df(prefix, old_columns, new_columns):
     return df
 
 def var_to_pickle(var, filename):
-    '''Writes the given variable to a pickle file
+    '''
+    Writes the given variable to a pickle file
 
     Args:
         var (any): variable to be written to pickle file
@@ -217,7 +231,8 @@ def var_to_pickle(var, filename):
     return
 
 def read_pickle(filename):
-    '''Reads the given pickle file
+    '''
+    Reads the given pickle file
 
     Args:
         filename (str): path and filename of pickle file
@@ -233,3 +248,43 @@ def read_pickle(filename):
         except:
             print(f'Failed to load pickle from \'{filename}\'')
     return output
+
+def compare_regressions(dfs, df_names, y_column):
+    '''
+    Fits and tests both a linear regression model and a lasso with polynomial
+    features for all provided DataFrames and then prints all R^2 scores
+
+    Args:
+        dfs (DataFrame list): the DataFrames used to train and test models
+        df_names (string list): descriptive names for each of the DataFrames
+        y_column (string): the name of the response column in the DataFrames
+
+    Returns:
+        None
+    '''
+    mlr = LinearRegression()
+    mla = LassoCV(cv=5, verbose=False)
+    scl = StandardScaler()
+    pf = PolynomialFeatures(degree=2)
+
+    for df, name in zip(dfs, df_names):
+        print('\n' + name)
+        df_dummies = pd.get_dummies(df, drop_first=True)
+        X_train, X_val, y_train, y_val =\
+            train_test_split(df_dummies.drop(y_column, axis=1),
+                                             df_dummies[y_column],
+                                             test_size=0.3)
+        # Linear Model
+        print('- Linear Model:')
+        mlr.fit(X_train, y_train)
+        print('    Train Score:', mlr.score(X_train, y_train))
+        print('    Test Score:', mlr.score(X_val, y_val))
+
+        # Lasso Model
+        print('- Lasso Model:')
+        X_train_scl = scl.fit_transform(X_train.values)
+        X_val_scl = scl.transform(X_val.values)
+        mla.fit(pf.fit_transform(X_train_scl), y_train)
+        print('    Train Score:', mla.score(pf.transform(X_train_scl), y_train))
+        print('    Test Score:', mla.score(pf.transform(X_val_scl),y_val))
+    return None
