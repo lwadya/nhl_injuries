@@ -192,7 +192,7 @@ def nst_files_to_df(prefix, old_columns, new_columns):
         DataFrame: combined CSV data sorted by player and season
     '''
     # Gets list of csv files
-    data_dir = '../data'
+    data_dir = '../data/csv'
     files = [os.path.join(data_dir, file) for file in os.listdir(data_dir)
              if file.startswith(prefix)]
 
