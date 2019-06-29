@@ -8,7 +8,7 @@ I attempted to build a model capable of predicting how many games an NHL player 
 
 ### Data Collection
 
-Counting stats for sports are easy to come by and hockey is no different - I was able to download CSVs of all player stats and biometrics for the last ten NHL seasons from ![Natural Stat Trick]('www.naturalstattrick.com'). I combined the separate datasets in ![this notebook]('notebook.ipynb'). Unfortunately reliable player injury histories are much more difficult to come by. I was able to scrape lists of injuries from individual player profiles from ![TSN]('www.tsn.ca/nhl') using Selenium and BeautifulSoup. All injury scraping and parsing is contained in ![this notebook]('notebook.ipynb'). While I don't believe the TSN data is an exhaustive list of player injuries it is the best I could find so that's what I used.
+Counting stats for sports are easy to come by and hockey is no different - I was able to download CSVs of all player stats and biometrics for the last ten NHL seasons from [Natural Stat Trick](https://www.naturalstattrick.com). I combined the separate NST datasets in [this notebook](work/player_nst_data.ipynb). Unfortunately reliable player injury histories are much more difficult to come by. I was able to scrape lists of injuries from individual player profiles from [TSN](https://www.tsn.ca/nhl) using Selenium and BeautifulSoup. All injury scraping and parsing is contained in [this notebook](work/player_injury_data.ipynb). While I don't believe the TSN data is an exhaustive list of player injuries it is the best I could find so that's what I used.
 
 ### Feature Selection/Engineering
 
@@ -30,5 +30,6 @@ I started off with some simple models because I wanted to evaluate what formulat
 * Each entry contains the counting stats, games missed due to injury, and games missed last season for a single season for a player. In this and the following format, players can have multiple rows of data.
 * Similar to the last format except it includes rolling averages of counting stats and games missed for all previous seasons.
 Unsurprisingly, the last and most robust data set resulted in the lowest test MSE so I used that formulation of my data for the final modeling.
+I created each of these data formulations in [this notebook](work/data_merge.ipynb).
 
 ### Models
