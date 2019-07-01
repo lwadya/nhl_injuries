@@ -35,8 +35,11 @@ I created each of these data formulations in [a notebook called 'data_merge'](wo
 ### EDA
 
 Exploratory Data Analysis confirmed some of my assumptions going in - mainly that injuries are largely random and unpredictable. The heatmap below shows very low correlation between any of my predictors and the response.  
+
 ![Predictor/Response Correlation Heatmap](img/heatmap.png)  
+
 I also created a histogram of games missed due to injury per season (second graph below) that shows most players miss little or no time. As a result the distribution of games missed has an extreme right skew.  
+
 ![Games Missed Due to Injury Histogram](img/hist.png)  
 
 ### Models
